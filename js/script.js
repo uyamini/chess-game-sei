@@ -165,17 +165,21 @@ function handleDrop(e) {
   }
 
   function selectPiece(row, col) {
-    //TO DO: slection and move validation logic implementation
     const piece = board[row][col];
-    if (piece !== PIECES.EMPTY) {
+    //Ensure the piece belongs to the current player
+    if (piece !== PIECES.EMPTY && piece[1] === currentPlayer) {
       console.log(`Selected piece: ${piece}`);
-      selectedPiece = { row, col, piece };
-      // TODO: Calculate possible moves
-      possibleMoves = calculatePossibleMoves(selectedPiece);
-      // TODO: Highlight possible moves
-      highlightPossibleMoves(possibleMoves);
+      selectedPiece = { row, col, piece }; //Mark the piece as selected
+      possibleMoves = calculatePossibleMoves(selectedPiece, board); //Calculate possible moves for this piece
+      highlightPossibleMoves(possibleMoves); //Highlight these possible moves
+    } else {
+      //Deselect if clicked outside or on an invalid piece
+      selectedPiece = null;
+      possibleMoves = [];
     }
   }
+
+
   function highlightPossibleMoves(moves) {
     //Clear previous highlights
     document.querySelectorAll('.possible-move').forEach(el => el.classList.remove('possible-move'));
