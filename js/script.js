@@ -147,6 +147,7 @@ function init() {
         { row: 0, col: -1 }, // Left
         { row: 0, col: 1 }   // Right
       ];
+      return calculateLinearMoves(selectedPiece, board, player, directions);
   }
   
   function calculateKnightMoves(selectedPiece, board, player) {
@@ -157,6 +158,14 @@ function init() {
         { row: 1, col: -2 }, { row: 1, col: 2 },
         { row: 2, col: -1 }, { row: 2, col: 1 }
       ];
+      directions.forEach(d => {
+        const move = { row: selectedPiece.row + d.row, col: selectedPiece.col + d.col };
+        if (isMoveLegal(selectedPiece, move, board, player)) {
+          moves.push(move);
+        }
+      });
+    
+      return moves;
   }
   
   function calculateBishopMoves(selectedPiece, board, player) {
@@ -167,6 +176,7 @@ function init() {
         { row: 1, col: -1 },  // Down-Left
         { row: 1, col: 1 }    // Down-Right
       ];
+      return calculateLinearMoves(selectedPiece, board, player, directions);
   }
   
   function calculateQueenMoves(selectedPiece, board, player) {
@@ -177,6 +187,7 @@ function init() {
         { row: -1, col: -1 }, { row: -1, col: 1 },
         { row: 1, col: -1 }, { row: 1, col: 1 }
       ];
+      return calculateLinearMoves(selectedPiece, board, player, directions);
   }
   
   function calculateKingMoves(selectedPiece, board, player) {
@@ -186,5 +197,33 @@ function init() {
         { row: 0, col: -1 }, /* King's position */ { row: 0, col: 1 },
         { row: 1, col: -1 }, { row: 1, col: 0 }, { row: 1, col: 1 }
       ];
+      directions.forEach(d => {
+        const move = { row: selectedPiece.row + d.row, col: selectedPiece.col + d.col };
+        if (isMoveLegal(selectedPiece, move, board, player)) {
+          moves.push(move);
+        }
+      });
+    
+      return moves;
   }
   
+  function calculateLinearMoves(selectedPiece, board, player, directions) {
+    const moves = [];
+  
+    directions.forEach(d => {
+      let row = selectedPiece.row + d.row;
+      let col = selectedPiece.col + d.col;
+      let hitPiece = false;
+  
+      while (!hitPiece && isMoveLegal(selectedPiece, { row, col }, board, player)) {
+        moves.push({ row, col });
+        if (board[row][col] !== PIECES.EMPTY) {
+          hitPiece = true; //stop adding moves in this direction if we hit a piece
+        }
+        row += d.row;
+        col += d.col;
+      }
+    });
+  
+    return moves;
+  }
