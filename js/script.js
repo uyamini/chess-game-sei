@@ -126,6 +126,17 @@ function init() {
       highlightPossibleMoves(possibleMoves);
     }
   }
+  function highlightPossibleMoves(moves) {
+    //Clear previous highlights
+    document.querySelectorAll('.possible-move').forEach(el => el.classList.remove('possible-move'));
+  
+    moves.forEach(move => {
+      const square = document.querySelector(`[data-position="${move.row}-${move.col}"]`);
+      if (square) {
+        square.classList.add('possible-move');
+      }
+    });
+  }
   
   function makeMove(selectedPiece, targetRow, targetCol) {
     //Move the piece if the target square is a possible move
