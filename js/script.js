@@ -136,26 +136,55 @@ function init() {
   }
   
   function calculatePawnMoves(selectedPiece, board, player) {
-    
+
   }
   
   function calculateRookMoves(selectedPiece, board, player) {
     //check all four directions (up, down, left, right)
+    const directions = [
+        { row: -1, col: 0 }, // Up
+        { row: 1, col: 0 },  // Down
+        { row: 0, col: -1 }, // Left
+        { row: 0, col: 1 }   // Right
+      ];
   }
   
   function calculateKnightMoves(selectedPiece, board, player) {
     //L-shaped moves
+    const directions = [
+        { row: -2, col: -1 }, { row: -2, col: 1 },
+        { row: -1, col: -2 }, { row: -1, col: 2 },
+        { row: 1, col: -2 }, { row: 1, col: 2 },
+        { row: 2, col: -1 }, { row: 2, col: 1 }
+      ];
   }
   
   function calculateBishopMoves(selectedPiece, board, player) {
     //diagonal moves
+    const directions = [
+        { row: -1, col: -1 }, // Up-Left
+        { row: -1, col: 1 },  // Up-Right
+        { row: 1, col: -1 },  // Down-Left
+        { row: 1, col: 1 }    // Down-Right
+      ];
   }
   
   function calculateQueenMoves(selectedPiece, board, player) {
     //combines the logic of both the rook and the bishop
+    const directions = [
+        { row: -1, col: 0 }, { row: 1, col: 0 }, 
+        { row: 0, col: -1 }, { row: 0, col: 1 },
+        { row: -1, col: -1 }, { row: -1, col: 1 },
+        { row: 1, col: -1 }, { row: 1, col: 1 }
+      ];
   }
   
   function calculateKingMoves(selectedPiece, board, player) {
     //moving one square in any direction
+    const directions = [
+        { row: -1, col: -1 }, { row: -1, col: 0 }, { row: -1, col: 1 },
+        { row: 0, col: -1 }, /* King's position */ { row: 0, col: 1 },
+        { row: 1, col: -1 }, { row: 1, col: 0 }, { row: 1, col: 1 }
+      ];
   }
   
