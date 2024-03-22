@@ -94,3 +94,68 @@ function init() {
   }
   
   init();
+
+  function calculatePossibleMoves(selectedPiece, board) {
+    let moves = [];
+    const player = selectedPiece.piece[1];
+  
+    switch (selectedPiece.piece[0]) {
+      case PIECES.PAWN:
+        moves = calculatePawnMoves(selectedPiece, board, player);
+        break;
+      case PIECES.ROOK:
+        moves = calculateRookMoves(selectedPiece, board, player);
+        break;
+      case PIECES.KNIGHT:
+        moves = calculateKnightMoves(selectedPiece, board, player);
+        break;
+      case PIECES.BISHOP:
+        moves = calculateBishopMoves(selectedPiece, board, player);
+        break;
+      case PIECES.QUEEN:
+        moves = calculateQueenMoves(selectedPiece, board, player);
+        break;
+      case PIECES.KING:
+        moves = calculateKingMoves(selectedPiece, board, player);
+        break;
+      default:
+        break;
+    }
+  
+    return moves.filter(move => isMoveLegal(selectedPiece, move, board, player));
+  }
+  
+  //Helper function to check if a move is legal (bounds check and collision detection)
+  function isMoveLegal(selectedPiece, move, board, player) {
+    //Check board boundaries
+    if (move.row < 0 || move.row >= BOARD_SIZE || move.col < 0 || move.col >= BOARD_SIZE) return false;
+    //Check for own piece at destination
+    const destinationPiece = board[move.row][move.col];
+    if (destinationPiece !== PIECES.EMPTY && destinationPiece[1] === player) return false;
+    return true;
+  }
+  
+  function calculatePawnMoves(selectedPiece, board, player) {
+    
+  }
+  
+  function calculateRookMoves(selectedPiece, board, player) {
+    //check all four directions (up, down, left, right)
+  }
+  
+  function calculateKnightMoves(selectedPiece, board, player) {
+    //L-shaped moves
+  }
+  
+  function calculateBishopMoves(selectedPiece, board, player) {
+    //diagonal moves
+  }
+  
+  function calculateQueenMoves(selectedPiece, board, player) {
+    //combines the logic of both the rook and the bishop
+  }
+  
+  function calculateKingMoves(selectedPiece, board, player) {
+    //moving one square in any direction
+  }
+  
