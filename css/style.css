@@ -58,3 +58,9 @@ main {
     border: none;
     border-radius: 5px;
 }
+
+.possible-move {
+    outline: 2px solid yellow;
+    cursor: pointer;
+  }
+  
