@@ -25,5 +25,12 @@ const messageEl = document.getElementById('message');
 const resetBtn = document.getElementById('reset');
 
 /*----- event listeners -----*/
+resetBtn.addEventListener('click', init);
 
 /*----- functions -----*/
+function init() {
+    board = createInitialBoard();
+    currentPlayer = PLAYERS.WHITE;
+    gameActive = true;
+    render();
+  }
