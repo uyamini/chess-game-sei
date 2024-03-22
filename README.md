@@ -1,3 +1,4 @@
+[CLICK TO PLAY](https://uyamini.github.io/chess-game-sei/)
 # Chess
 This project brings the centuries-old strategy game into your browser, allowing players to challenge themselves or others in a game of intellect and foresight. 
 The game of chess was born in India during the Gupta dynasty in the 6th century, and today, more than 1500 years later, it is played in 172 countries. 
