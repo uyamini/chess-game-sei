@@ -18,7 +18,7 @@ The project's goal is to provide a straightforward and enjoyable chess experienc
 
 # Getting Started
 
-If you're new to the game like I am, check out this [How to Play Chess on YouTube](https://www.youtube.com/watch?v=fKxG8KjH1Qg)
+If you're new to the game like I am, check out this [How to Play Chess](https://www.youtube.com/watch?v=fKxG8KjH1Qg)
  video on YouTube for a quick 4 minute brief.
 
 **Prerequisites**
