@@ -90,9 +90,10 @@ function init() {
   }
 
   function updateMessage() {
-    messageEl.textContent = currentPlayer === PLAYERS.WHITE ? "White's turn" : "Black's turn";
-    if (!gameActive) {
-      messageEl.textContent = currentPlayer === PLAYERS.WHITE ? "Black wins!" : "White wins!";
+    const playerColor = currentPlayer === PLAYERS.WHITE ? "White" : "Black";
+    messageEl.textContent = `${playerColor}'s Turn`;
+    if (isInCheck(currentPlayer, board)) {
+      messageEl.textContent += " - Check";
     }
   }
   
