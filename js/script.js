@@ -113,6 +113,20 @@ function init() {
       selectPiece(row, col);
     }
   }
+
+  function selectPiece(row, col) {
+    //TO DO: slection and move validation logic implementation
+    const piece = board[row][col];
+    if (piece !== PIECES.EMPTY) {
+      console.log(`Selected piece: ${piece}`);
+      selectedPiece = { row, col, piece };
+      // TODO: Calculate possible moves
+      possibleMoves = calculatePossibleMoves(selectedPiece);
+      // TODO: Highlight possible moves
+      highlightPossibleMoves(possibleMoves);
+    }
+  }
+  
   
   function calculatePossibleMoves(selectedPiece, board) {
     let moves = [];
@@ -182,7 +196,7 @@ function init() {
     }
   });
 
-  //To Do: En passant logic will need to be implemented here
+  //TO DO: En passant logic will need to be implemented here
   return moves;
   }
   
