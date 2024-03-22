@@ -136,7 +136,35 @@ function init() {
   }
   
   function calculatePawnMoves(selectedPiece, board, player) {
+    const moves = [];
+  const direction = player === PLAYERS.WHITE ? -1 : 1; //Pawns move up for White, down for Black
+  const startRow = player === PLAYERS.WHITE ? 6 : 1; //Starting row for double move
+  const opponent = player === PLAYERS.WHITE ? PLAYERS.BLACK : PLAYERS.WHITE;
 
+  //Single square forward
+  if (board[selectedPiece.row + direction][selectedPiece.col] === PIECES.EMPTY) {
+    moves.push({ row: selectedPiece.row + direction, col: selectedPiece.col });
+
+    //Double square forward from starting position
+    if (selectedPiece.row === startRow && board[selectedPiece.row + (2 * direction)][selectedPiece.col] === PIECES.EMPTY) {
+      moves.push({ row: selectedPiece.row + (2 * direction), col: selectedPiece.col });
+    }
+  }
+
+  //Captures
+  const potentialCaptures = [
+    { row: selectedPiece.row + direction, col: selectedPiece.col - 1 },
+    { row: selectedPiece.row + direction, col: selectedPiece.col + 1 }
+  ];
+
+  potentialCaptures.forEach(move => {
+    if (move.col >= 0 && move.col < BOARD_SIZE && board[move.row][move.col][1] === opponent) {
+      moves.push(move);
+    }
+  });
+
+  //To Do: En passant logic will need to be implemented here
+  return moves;
   }
   
   function calculateRookMoves(selectedPiece, board, player) {
