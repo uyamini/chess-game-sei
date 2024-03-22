@@ -23,7 +23,8 @@ If you're new to the game like I am, check out this [How to Play Chess](https://
 
 **Prerequisites**
 A modern web browser capable of running JavaScript.
-Usage
+
+[Let the games begin](https://uyamini.github.io/chess-game-sei/)
 
 **Usage**
 Use this project to play chess against another person on the same device. 
