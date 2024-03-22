@@ -191,42 +191,35 @@ function handleDrop(e) {
       }
     });
   }
+
+  
   
   function makeMove(selectedPiece, targetRow, targetCol) {
-    //Ensure the move is within the list of calculated possible moves
+    // Validate the move is within the calculated possible moves
     if (possibleMoves.some(pos => pos.row === targetRow && pos.col === targetCol)) {
-      //Execute the move
-      board[targetRow][targetCol] = selectedPiece.piece; // Move the piece to the new square
+      // Execute the move
+      board[targetRow][targetCol] = selectedPiece.piece; // Move the piece
       board[selectedPiece.row][selectedPiece.col] = PIECES.EMPTY; // Clear the original square
-      
-      //Handle special moves here (e.g., pawn promotion, en passant, castling)
   
-      //Pawn promotion example (simplified, usually player chooses the piece)
+      // Handle special rules like pawn promotion
       if (selectedPiece.piece[0] === PIECES.PAWN && (targetRow === 0 || targetRow === BOARD_SIZE - 1)) {
-        board[targetRow][targetCol] = PIECES.QUEEN + selectedPiece.piece[1]; // Promote to Queen
+        // Simplified pawn promotion to Queen
+        board[targetRow][targetCol] = PIECES.QUEEN + selectedPiece.piece[1];
       }
   
-      //Clear the selected piece and possible moves
+      selectedPiece = null; // Clear the selection
+      possibleMoves = []; // Clear possible moves
+      currentPlayer = currentPlayer === PLAYERS.WHITE ? PLAYERS.BLACK : PLAYERS.WHITE; // Switch turns
+  
+      render(); // Re-render the board to reflect the new state
+    } else {
+      // If the move isn't valid, deselect the piece and clear possible moves
       selectedPiece = null;
       possibleMoves = [];
-  
-      //Switch the current player
-      currentPlayer = currentPlayer === PLAYERS.WHITE ? PLAYERS.BLACK : PLAYERS.WHITE;
-      
-      //Re-render the board to reflect the new state
-      renderBoard();
-      
-      //Additional checks after move (check, checkmate, stalemate)
-      if (isCheck(currentPlayer, board)) {
-        console.log(currentPlayer + " is in check");
-        // Extend this with check for checkmate or stalemate if needed
-        if (isCheckmate(currentPlayer, board)) {
-          console.log(currentPlayer + " is in checkmate");
-          //Handle endgame scenario
-        }
-      }
+      highlightPossibleMoves([]); // Clear highlighted moves
     }
   }
+  
   
   
   function calculatePossibleMoves(selectedPiece, board) {
