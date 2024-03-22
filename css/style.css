@@ -38,12 +38,13 @@ main {
 
 /* Styles for light and dark squares */
 #chessboard div.light {
-    background-color: #f0d9b5; /* light wood color */
+    background: linear-gradient(135deg, #f0d9b5 0%, #fff8e1 100%);
 }
 
 #chessboard div.dark {
-    background-color: #b58863; /* dark wood color */
+    background: linear-gradient(135deg, #b58863 0%, #d8b58d 100%);
 }
+
 
 #game-info {
     margin-top: 20px;
@@ -126,7 +127,7 @@ main {
     position: absolute;
     width: 10px;
     height: 10px;
-    background-color: #ff0;
+    background-color: pink;
     opacity: 0.7;
     border-radius: 50%;
     /* Initial invisible state */
