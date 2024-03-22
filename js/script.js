@@ -15,6 +15,9 @@ const PLAYERS = {
 };
 
 /*----- state variables -----*/
+let board;
+let currentPlayer;
+let gameActive;
 
 /*----- cached elements  -----*/
 
