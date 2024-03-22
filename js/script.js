@@ -23,6 +23,8 @@ let gameActive;
 const chessboardEl = document.getElementById('chessboard');
 const messageEl = document.getElementById('message');
 const resetBtn = document.getElementById('reset');
+let selectedPiece = null;
+let possibleMoves = [];
 
 /*----- event listeners -----*/
 resetBtn.addEventListener('click', init);
