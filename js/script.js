@@ -330,4 +330,27 @@ function init() {
   
     return false;
   }
+
+  function isCheckmate(player, board) {
+    if (!isInCheck(player, board)) return false; //Not in checkmate if not in check
+  
+    //Try all moves for all pieces to see if check can be escaped
+    for (let row = 0; row < BOARD_SIZE; row++) {
+      for (let col = 0; col < BOARD_SIZE; col++) {
+        const piece = board[row][col];
+        if (piece[1] === player) {
+          const moves = calculatePossibleMoves({ row, col, piece }, board);
+          for (let move of moves) {
+            const newBoard = JSON.parse(JSON.stringify(board)); //Deep copy the board
+            // Simulate the move
+            newBoard[move.row][move.col] = piece;
+            newBoard[row][col] = PIECES.EMPTY;
+            if (!isInCheck(player, newBoard)) return false; //Found a move to escape check
+          }
+        }
+      }
+    }
+  
+    return true; //No legal moves to escape check, thus checkmate
+  }
   
