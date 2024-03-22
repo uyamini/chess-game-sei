@@ -18,13 +18,14 @@ const PLAYERS = {
 let board;
 let currentPlayer;
 let gameActive;
+let selectedPiece = null;
+let possibleMoves = [];
 
 /*----- cached elements  -----*/
 const chessboardEl = document.getElementById('chessboard');
 const messageEl = document.getElementById('message');
 const resetBtn = document.getElementById('reset');
-let selectedPiece = null;
-let possibleMoves = [];
+chessboardEl.addEventListener('click', handleSquareClick);
 
 /*----- event listeners -----*/
 resetBtn.addEventListener('click', init);
@@ -97,6 +98,22 @@ function init() {
   
   init();
 
+  function handleSquareClick(evt) {
+    //Only respond to clicks on squares
+    if (!evt.target.classList.contains('square')) return;
+  
+    const clickedPos = evt.target.dataset.position.split('-').map(Number);
+    const [row, col] = clickedPos;
+  
+    if (selectedPiece) {
+      //Attempt to move the selected piece to the clicked square
+      makeMove(selectedPiece, row, col);
+    } else {
+      //Select the piece
+      selectPiece(row, col);
+    }
+  }
+  
   function calculatePossibleMoves(selectedPiece, board) {
     let moves = [];
     const player = selectedPiece.piece[1];
