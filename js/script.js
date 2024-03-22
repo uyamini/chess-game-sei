@@ -127,6 +127,19 @@ function init() {
     }
   }
   
+  function makeMove(selectedPiece, targetRow, targetCol) {
+    //Move the piece if the target square is a possible move
+    if (possibleMoves.some(pos => pos.row === targetRow && pos.col === targetCol)) {
+      //TO DO: implement the move logic and state updates here
+      console.log(`Moved ${selectedPiece.piece} to ${targetRow}-${targetCol}`);
+      board[targetRow][targetCol] = selectedPiece.piece; //Place piece on the target square
+      board[selectedPiece.row][selectedPiece.col] = PIECES.EMPTY; //Clear the original square
+      selectedPiece = null; //Deselect the piece
+      possibleMoves = []; //Clear possible moves
+      currentPlayer = currentPlayer === PLAYERS.WHITE ? PLAYERS.BLACK : PLAYERS.WHITE; // Switch turns
+      render(); //Re-render the board to show the updated state
+    }
+  }
   
   function calculatePossibleMoves(selectedPiece, board) {
     let moves = [];
@@ -288,3 +301,33 @@ function init() {
   
     return moves;
   }
+
+  function isInCheck(player, board) {
+    //Find the king's position
+    let kingPosition;
+    for (let row = 0; row < BOARD_SIZE; row++) {
+      for (let col = 0; col < BOARD_SIZE; col++) {
+        if (board[row][col] === (PIECES.KING + player)) {
+          kingPosition = { row, col };
+          break;
+        }
+      }
+      if (kingPosition) break;
+    }
+  
+    //Check if any opposing piece can capture the king
+    for (let row = 0; row < BOARD_SIZE; row++) {
+      for (let col = 0; col < BOARD_SIZE; col++) {
+        const piece = board[row][col];
+        if (piece !== PIECES.EMPTY && piece[1] !== player) {
+          const moves = calculatePossibleMoves({ row, col, piece }, board);
+          if (moves.some(move => move.row === kingPosition.row && move.col === kingPosition.col)) {
+            return true; //King is in check
+          }
+        }
+      }
+    }
+  
+    return false;
+  }
+  
