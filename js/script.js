@@ -130,10 +130,13 @@ function init() {
   
 //Handle drag start
 function handleDragStart(e) {
-    const position = e.target.closest('.square').dataset.position;
-    e.dataTransfer.setData('text/plain', position);
+    if (!e.target.classList.contains('chess-piece')) return;
+    const position = e.target.parentElement.dataset.position;
     const [row, col] = position.split('-').map(Number);
-    selectPiece(row, col); //This will set the selectedPiece and calculate possible moves
+    if (board[row][col][1] !== currentPlayer) return; //Ensure it's the current player's turn
+    
+    e.dataTransfer.setData('text/plain', position);
+    selectPiece(row, col); //Prepares for moving the selected piece
 }
 
 //Allow dropping by preventing the default handling of the event
@@ -144,23 +147,25 @@ function handleDragOver(e) {
 //Handle drop to move piece
 function handleDrop(e) {
     e.preventDefault();
-    const targetSquare = e.target.closest('.square');
-    const newPosition = targetSquare.dataset.position;
     const originalPosition = e.dataTransfer.getData('text/plain');
-
-    if (!newPosition || !originalPosition || newPosition === originalPosition) {
-        return; //Invalid drop or no movement
-    }
-
     const [startRow, startCol] = originalPosition.split('-').map(Number);
-    const [endRow, endCol] = newPosition.split('-').map(Number);
-
-    //Only move if it's among the calculated possible moves
-    if (possibleMoves.find(move => move.row === endRow && move.col === endCol)) {
-        makeMove({row: startRow, col: startCol, piece: board[startRow][startCol]}, endRow, endCol);
-    }
+    
+    const targetSquare = e.target.closest('.square');
+    if (!targetSquare) return; //Invalid drop
+    const [endRow, endCol] = targetSquare.dataset.position.split('-').map(Number);
+    
+    //Attempt to move the selected piece to the new square
+    makeMove({ row: startRow, col: startCol, piece: board[startRow][startCol] }, endRow, endCol);
 }
 
+//Simulate Move Function (New Addition)
+function simulateMove(board, startRow, startCol, endRow, endCol) {
+    const newBoard = JSON.parse(JSON.stringify(board)); //Deep copy of board
+    const piece = newBoard[startRow][startCol];
+    newBoard[endRow][endCol] = piece;
+    newBoard[startRow][startCol] = PIECES.EMPTY;
+    return newBoard;
+}
 
   function handleSquareClick(evt) {
     //Only respond to clicks on squares
@@ -222,11 +227,29 @@ function handleDrop(e) {
   
       selectedPiece = null; // Clear the selection
       possibleMoves = []; // Clear possible moves
-      currentPlayer = currentPlayer === PLAYERS.WHITE ? PLAYERS.BLACK : PLAYERS.WHITE; // Switch turns
-  
-      render(); // Re-render the board to reflect the new state
+      currentPlayer = currentPlayer === PLAYERS.WHITE ? PLAYERS.BLACK : PLAYERS.WHITE; //Switch turns
+
+      // Check for game conditions
+    if (isInCheck(currentPlayer)) {
+        if (isCheckmate(currentPlayer)) {
+            console.log(`${currentPlayer} is in checkmate. Game over.`);
+            gameActive = false;
+            updateMessage(`${currentPlayer} is in checkmate. Game over.`);
+            return;
+        } else {
+            console.log(`${currentPlayer} is in check.`);
+            updateMessage(`${currentPlayer} is in check.`);
+        }
+    } else if (isStalemate(currentPlayer)) {
+        console.log(`Stalemate. Game over.`);
+        gameActive = false;
+        updateMessage(`Stalemate. Game over.`);
+        return;
+    }
+
+      render(); //Re-render the board to reflect the new state
     } else {
-      // If the move isn't valid, deselect the piece and clear possible moves
+      //If the move isn't valid, deselect the piece and clear possible moves
       selectedPiece = null;
       possibleMoves = [];
       highlightPossibleMoves([]); // Clear highlighted moves
@@ -396,6 +419,34 @@ function handleDrop(e) {
     return moves;
   }
 
+  function isInCheck(player) {
+    // Locate the king
+    let kingPosition = findKingPosition(player);
+    // Check if any opponent's piece can move to the king's position
+    for (let row = 0; row < BOARD_SIZE; row++) {
+        for (let col = 0; col < BOARD_SIZE; col++) {
+            let piece = board[row][col];
+            if (piece !== PIECES.EMPTY && piece[1] !== player) {
+                let moves = calculatePossibleMoves({ row, col, piece }, board);
+                if (moves.some(move => move.row === kingPosition.row && move.col === kingPosition.col)) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+function findKingPosition(player) {
+    for (let row = 0; row < BOARD_SIZE; row++) {
+        for (let col = 0; col < BOARD_SIZE; col++) {
+            if (board[row][col] === PIECES.KING + player) {
+                return { row, col };
+            }
+        }
+    }
+}
+
   function isInCheck(player, board) {
     //Find the king's position
     let kingPosition;
@@ -425,26 +476,24 @@ function handleDrop(e) {
     return false;
   }
 
-  function isCheckmate(player, board) {
-    if (!isInCheck(player, board)) return false; //Not in checkmate if not in check
-  
-    //Try all moves for all pieces to see if check can be escaped
+  function isCheckmate(player) {
+    if (!isInCheck(player)) return false; // Can't be checkmate if not in check
+
+    // Try all possible moves for all pieces
     for (let row = 0; row < BOARD_SIZE; row++) {
-      for (let col = 0; col < BOARD_SIZE; col++) {
-        const piece = board[row][col];
-        if (piece[1] === player) {
-          const moves = calculatePossibleMoves({ row, col, piece }, board);
-          for (let move of moves) {
-            const newBoard = JSON.parse(JSON.stringify(board)); //Deep copy the board
-            // Simulate the move
-            newBoard[move.row][move.col] = piece;
-            newBoard[row][col] = PIECES.EMPTY;
-            if (!isInCheck(player, newBoard)) return false; //Found a move to escape check
-          }
+        for (let col = 0; col < BOARD_SIZE; col++) {
+            let piece = board[row][col];
+            if (piece[1] === player) {
+                let moves = calculatePossibleMoves({ row, col, piece }, board);
+                for (let move of moves) {
+                    // Simulate each move
+                    let simulatedBoard = simulateMove(board, row, col, move.row, move.col);
+                    if (!isInCheck(player, simulatedBoard)) {
+                        return false; // Found a move that can escape check
+                    }
+                }
+            }
         }
-      }
     }
-  
-    return true; //No legal moves to escape check, thus checkmate
-  }
-  
+    return true; // No legal moves to escape check
+}
