@@ -130,9 +130,10 @@ function init() {
   
 //Handle drag start
 function handleDragStart(e) {
-    const piece = e.target.dataset.piece;
-    const [row, col] = e.target.parentElement.dataset.position.split('-').map(Number);
-    selectPiece(row, col);
+    const position = e.target.closest('.square').dataset.position;
+    e.dataTransfer.setData('text/plain', position);
+    const [row, col] = position.split('-').map(Number);
+    selectPiece(row, col); //This will set the selectedPiece and calculate possible moves
 }
 
 //Allow dropping by preventing the default handling of the event
@@ -143,10 +144,23 @@ function handleDragOver(e) {
 //Handle drop to move piece
 function handleDrop(e) {
     e.preventDefault();
-    const [startRow, startCol] = e.dataTransfer.getData('text/plain').split(',');
-    const [endRow, endCol] = e.target.dataset.position.split('-').map(Number);
-    makeMove({ row: parseInt(startRow, 10), col: parseInt(startCol, 10), piece: board[startRow][startCol] }, endRow, endCol);
+    const targetSquare = e.target.closest('.square');
+    const newPosition = targetSquare.dataset.position;
+    const originalPosition = e.dataTransfer.getData('text/plain');
+
+    if (!newPosition || !originalPosition || newPosition === originalPosition) {
+        return; //Invalid drop or no movement
+    }
+
+    const [startRow, startCol] = originalPosition.split('-').map(Number);
+    const [endRow, endCol] = newPosition.split('-').map(Number);
+
+    //Only move if it's among the calculated possible moves
+    if (possibleMoves.find(move => move.row === endRow && move.col === endCol)) {
+        makeMove({row: startRow, col: startCol, piece: board[startRow][startCol]}, endRow, endCol);
+    }
 }
+
 
   function handleSquareClick(evt) {
     //Only respond to clicks on squares
@@ -166,18 +180,17 @@ function handleDrop(e) {
 
   function selectPiece(row, col) {
     const piece = board[row][col];
-    //Ensure the piece belongs to the current player
     if (piece !== PIECES.EMPTY && piece[1] === currentPlayer) {
-      console.log(`Selected piece: ${piece}`);
-      selectedPiece = { row, col, piece }; //Mark the piece as selected
-      possibleMoves = calculatePossibleMoves(selectedPiece, board); //Calculate possible moves for this piece
-      highlightPossibleMoves(possibleMoves); //Highlight these possible moves
+        selectedPiece = { row, col, piece };
+        possibleMoves = calculatePossibleMoves(selectedPiece, board);
+        highlightPossibleMoves(possibleMoves);
     } else {
-      //Deselect if clicked outside or on an invalid piece
-      selectedPiece = null;
-      possibleMoves = [];
+        selectedPiece = null;
+        possibleMoves = [];
+        highlightPossibleMoves([]); // Clear any highlighted moves
     }
-  }
+}
+
 
 
   function highlightPossibleMoves(moves) {
@@ -192,7 +205,7 @@ function handleDrop(e) {
     });
   }
 
-  
+
   
   function makeMove(selectedPiece, targetRow, targetCol) {
     // Validate the move is within the calculated possible moves
