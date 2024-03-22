@@ -29,7 +29,6 @@ chessboardEl.addEventListener('click', handleSquareClick);
 
 /*----- event listeners -----*/
 resetBtn.addEventListener('click', init);
-document.getElementById('reset').addEventListener('click', init);
 chessboardEl.addEventListener('dragstart', handleDragStart, false);
 chessboardEl.addEventListener('dragover', handleDragOver, false);
 chessboardEl.addEventListener('drop', handleDrop, false);
@@ -40,7 +39,7 @@ function init() {
     currentPlayer = PLAYERS.WHITE;
     gameActive = true;
     render();
-  }
+}
 
   function createInitialBoard() {
     // Initialize an 8x8 board with empty spaces
@@ -93,7 +92,7 @@ function init() {
             if (piece !== PIECES.EMPTY) {
                 //Create a span element to hold the piece character or image
                 const pieceElement = document.createElement('span');
-                pieceElement.className = `chess-piece ${piece}`;
+                pieceElement.className = `chess-piece ${piece} ${piece[1]}${piece[0]}`;
                 pieceElement.textContent = piece[0]; //Placeholder for the piece character
                 pieceElement.dataset.piece = piece; //Custom data attribute to identify the piece
                 
@@ -117,27 +116,44 @@ function init() {
     updateMessage(); //Update game status message
 }
 
+function updateMessage() {
+    if (!gameActive) {
+        // Game over conditions
+        if (isCheckmate(currentPlayer)) {
+            messageEl.textContent = `${currentPlayer === PLAYERS.WHITE ? 'Black' : 'White'} wins by checkmate! Game Over.`;
+        } else if (isStalemate(currentPlayer)) {
+            messageEl.textContent = "Stalemate! Game Over.";
+        } else {
+            messageEl.textContent = "Game Over.";
+        }
+    } else {
+        // Game is still active
+        const playerColor = currentPlayer === PLAYERS.WHITE ? "White" : "Black";
+        messageEl.textContent = `${playerColor}'s Turn`;
 
-  function updateMessage() {
-    const playerColor = currentPlayer === PLAYERS.WHITE ? "White" : "Black";
-    messageEl.textContent = `${playerColor}'s Turn`;
-    if (isInCheck(currentPlayer, board)) {
-      messageEl.textContent += " - Check";
+        // Check for check state
+        if (isInCheck(currentPlayer)) {
+            messageEl.textContent += " - Check";
+        }
     }
-  }
-  
+}
+
+
   init();
   
 //Handle drag start
 function handleDragStart(e) {
-    if (!e.target.classList.contains('chess-piece')) return;
     const position = e.target.parentElement.dataset.position;
     const [row, col] = position.split('-').map(Number);
-    if (board[row][col][1] !== currentPlayer) return; //Ensure it's the current player's turn
-    
-    e.dataTransfer.setData('text/plain', position);
-    selectPiece(row, col); //Prepares for moving the selected piece
+    const piece = board[row][col];
+    if (piece === PIECES.EMPTY || piece[1] !== currentPlayer) {
+        e.preventDefault(); // Cancel drag if square is empty or not the player's turn
+        return;
+    }
+    e.dataTransfer.setData('text/plain', position); // Store the position for the drop
+    selectPiece(row, col); // Highlight and prepare for moving
 }
+
 
 //Allow dropping by preventing the default handling of the event
 function handleDragOver(e) {
@@ -149,34 +165,32 @@ function handleDrop(e) {
     e.preventDefault();
     const originalPosition = e.dataTransfer.getData('text/plain');
     const [startRow, startCol] = originalPosition.split('-').map(Number);
-
     const targetSquare = e.target.closest('.square');
-    if (!targetSquare) return; // Invalid drop
     const [endRow, endCol] = targetSquare.dataset.position.split('-').map(Number);
 
+    // Validate move
     if (board[startRow][startCol] === PIECES.EMPTY) {
         console.error("Attempting to move an empty square");
         return;
     }
     
-    // Ensure it's the current player's turn
-    if (board[startRow][startCol][1] !== currentPlayer) {
-        console.error("Not the current player's turn");
-        return;
-    }
+    // Attempt the move
+    makeMove({row: startRow, col: startCol, piece: board[startRow][startCol]}, endRow, endCol);
 
-    makeMove({ row: startRow, col: startCol, piece: board[startRow][startCol] }, endRow, endCol);
+    // Additional logic (such as switch players) should be handled within makeMove
 }
+
 
 
 //Simulate Move Function (New Addition)
 function simulateMove(board, startRow, startCol, endRow, endCol) {
-    const newBoard = JSON.parse(JSON.stringify(board)); //Deep copy of board
+    const newBoard = JSON.parse(JSON.stringify(board));
     const piece = newBoard[startRow][startCol];
     newBoard[endRow][endCol] = piece;
     newBoard[startRow][startCol] = PIECES.EMPTY;
     return newBoard;
 }
+
 
   function handleSquareClick(evt) {
     //Only respond to clicks on squares
@@ -227,6 +241,11 @@ function simulateMove(board, startRow, startCol, endRow, endCol) {
     // Log board state before the move
     console.log(`Board state before move:`, board.map(row => row.join(", ")).join("\n"));
     console.log(`Moving piece from ${selectedPiece.row},${selectedPiece.col} to ${targetRow},${targetCol}`);
+
+    if (!selectedPiece || board[targetRow][targetCol] && board[targetRow][targetCol][1] === currentPlayer) {
+        console.error("Invalid move");
+        return;
+    }
     
     // Validate the move is within the calculated possible moves
     if (possibleMoves.some(pos => pos.row === targetRow && pos.col === targetCol)) {
@@ -258,7 +277,7 @@ function simulateMove(board, startRow, startCol, endRow, endCol) {
             console.log(`${currentPlayer} is in check.`);
             updateMessage(`${currentPlayer} is in check.`);
         }
-    } else if (isStalemate(currentPlayer)) {
+    } else if (isStalemate(currentPlayer, board)) {
         console.log(`Stalemate. Game over.`);
         gameActive = false;
         updateMessage(`Stalemate. Game over.`);
@@ -446,29 +465,21 @@ function simulateMove(board, startRow, startCol, endRow, endCol) {
     return moves;
   }
 
-function isInCheck(player, board) {
-    if (!board || !Array.isArray(board)) {
-        console.error("Invalid or undefined board passed to isInCheck:", board);
-        return false; // Early return to prevent further errors
-    }
-    // Before calling isInCheck or findKingPosition
-console.log(`Current player: ${currentPlayer}`);
-console.log(`Board state before checking for check:`, board.map(row => row.join(", ")).join("\n"));
-
-    let kingPosition = findKingPosition(player, board);
+  function isInCheck(player) {
+    const kingPosition = findKingPosition(player);
     if (!kingPosition) {
-        console.error("King not found. This should not happen.");
+        console.error("King not found, which should never happen.");
         return false;
     }
-
     for (let row = 0; row < BOARD_SIZE; row++) {
         for (let col = 0; col < BOARD_SIZE; col++) {
             const piece = board[row][col];
-            // Check if the piece is not empty and belongs to the opposing player
             if (piece !== PIECES.EMPTY && piece[1] !== player) {
-                const moves = calculatePossibleMoves({row, col, piece}, board);
-                if (moves.some(move => move.row === kingPosition.row && move.col === kingPosition.col)) {
-                    return true; // The king is in check
+                const moves = calculatePossibleMoves({ row, col, piece }, board);
+                for (const move of moves) {
+                    if (move.row === kingPosition.row && move.col === kingPosition.col) {
+                        return true;
+                    }
                 }
             }
         }
@@ -476,22 +487,18 @@ console.log(`Board state before checking for check:`, board.map(row => row.join(
     return false;
 }
 
-function findKingPosition(player, board) {
-    console.log(`Looking for ${PIECES.KING + player} king.`);
-    for (let row = 0; row < BOARD_SIZE; row++) {
-        for (let col = 0; col < BOARD_SIZE; col++) {
-            if (board[row][col] === undefined) {
-                console.log(`Undefined piece at ${row}, ${col}`);
-            } else if (board[row][col] === PIECES.KING + player) {
-                console.log(`King found at ${row}, ${col}`);
-                return { row, col };
-            }
-        }
-    }
-    console.error("King not found. This should not happen.", player);
-    return null;
-}
+  
 
+  function findKingPosition(player) {
+    for (let row = 0; row < BOARD_SIZE; row++) {
+      for (let col = 0; col < BOARD_SIZE; col++) {
+        if (board[row][col] === PIECES.KING + player) {
+          return { row, col };
+        }
+      }
+    }
+    return null; // Should not happen if a game is correctly initialized
+  }
 
 
   function isCheckmate(player) {
@@ -499,16 +506,58 @@ function findKingPosition(player, board) {
 
     for (let row = 0; row < BOARD_SIZE; row++) {
         for (let col = 0; col < BOARD_SIZE; col++) {
-            if (board[row][col][1] === player) {
-                const possibleMoves = calculatePossibleMoves({ row, col, piece: board[row][col] }, board);
-                for (const move of possibleMoves) {
+            const piece = board[row][col];
+            if (piece[1] === player) {
+                const moves = calculatePossibleMoves({ row, col, piece }, board);
+                for (const move of moves) {
                     const simulatedBoard = simulateMove(board, row, col, move.row, move.col);
                     if (!isInCheck(player, simulatedBoard)) {
-                        return false; // Found a move that escapes check
+                        return false; // There's a move that gets the player out of check
                     }
                 }
             }
         }
     }
-    return true; // No legal move found to escape check, thus checkmate
+    return true; // No moves get the player out of check
+}
+
+
+  function isStalemate(player) {
+    if (isInCheck(player, board)) return false; // Can't be stalemate if in check
+  
+    for (let row = 0; row < BOARD_SIZE; row++) {
+      for (let col = 0; col < BOARD_SIZE; col++) {
+        if (board[row][col][1] === player) {
+          const possibleMoves = calculatePossibleMoves({ row, col, piece: board[row][col] }, board);
+          for (const move of possibleMoves) {
+            const simulatedBoard = simulateMove(board, row, col, move.row, move.col);
+            if (!isInCheck(player, simulatedBoard)) {
+              return false; // Found a legal move
+            }
+          }
+        }
+      }
+    }
+    return true; // No legal moves available, stalemate
+  }
+
+function hasLegalMoves(row, col, board) {
+    const piece = board[row][col];
+    const player = piece[1];
+    
+    // Calculate possible moves for the piece
+    const possibleMoves = calculatePossibleMoves({ row, col, piece }, board);
+    
+    // Iterate over possible moves and check if any move is legal
+    for (const move of possibleMoves) {
+        const simulatedBoard = simulateMove(board, row, col, move.row, move.col);
+        
+        // If making the move doesn't put the player's king in check, it's a legal move
+        if (!isInCheck(player, simulatedBoard)) {
+            return true;
+        }
+    }
+    
+    // If no legal moves found for the piece, return false
+    return false;
 }
