@@ -79,39 +79,59 @@ function init() {
   }
   
   function render() {
-    chessboardEl.innerHTML = ''; //Clear the board for a fresh render
+    chessboardEl.innerHTML = ''; // Clear the board for a fresh render
+  
     for (let row = 0; row < BOARD_SIZE; row++) {
-        for (let col = 0; col < BOARD_SIZE; col++) {
-            //Create each square
-            const square = document.createElement('div');
-            square.className = 'square ' + ((row + col) % 2 ? 'dark' : 'light'); //Alternating colors
-            square.dataset.position = `${row}-${col}`;
-            square.setAttribute('draggable', false); //Default to not draggable
-            
-            const piece = board[row][col];
-            if (piece !== PIECES.EMPTY) {
-                //Create a span element to hold the piece character or image
-                const pieceElement = document.createElement('span');
-                pieceElement.className = `chess-piece ${piece} ${piece[1]}${piece[0]}`;
-                pieceElement.textContent = piece[0]; //Placeholder for the piece character
-                pieceElement.dataset.piece = piece; //Custom data attribute to identify the piece
-                
-                //Make pieces draggable
-                if (piece[1] === currentPlayer) {
-                    pieceElement.setAttribute('draggable', true);
-                    pieceElement.addEventListener('dragstart', handleDragStart);
-                }
-
-                square.appendChild(pieceElement);
-            }
-            
-            //Drop event listener to allow moving pieces
-            square.addEventListener('dragover', handleDragOver);
-            square.addEventListener('drop', handleDrop);
-
-            chessboardEl.appendChild(square);
+      for (let col = 0; col < BOARD_SIZE; col++) {
+        const square = document.createElement('div');
+        square.className = 'square ' + ((row + col) % 2 ? 'dark' : 'light'); // Alternating colors
+        square.dataset.position = `${row}-${col}`;
+  
+        const piece = board[row][col];
+        if (piece !== PIECES.EMPTY) {
+          const color = piece[1] === PLAYERS.WHITE ? 'W' : 'B';
+          let svgMarkup = '';
+  
+          //Select the correct SVG based on the piece type
+          switch (piece[0]) {
+            case PIECES.KING:
+              svgMarkup = king;
+              break;
+            case PIECES.QUEEN:
+              svgMarkup = queen;
+              break;
+            case PIECES.ROOK:
+              svgMarkup = rook;
+              break;
+            case PIECES.BISHOP:
+              svgMarkup = bishop;
+              break;
+            case PIECES.KNIGHT:
+              svgMarkup = knight;
+              break;
+            case PIECES.PAWN:
+              svgMarkup = pawn;
+              break;
+            default:
+              break;
+          }
+  
+          // Add class to distinguish color
+          svgMarkup = svgMarkup.replace('<div class="piece"', `<div class="piece ${color}"`);
+          
+          // Set the inner HTML of the square to the SVG markup
+          square.innerHTML = svgMarkup;
         }
+  
+        chessboardEl.appendChild(square);
+      }
     }
+  
+    // After rendering the board and pieces
+document.querySelectorAll('.piece').forEach(piece => {
+    piece.setAttribute('draggable', true);
+});
+
     highlightPossibleMoves(possibleMoves); //Re-highlight possible moves after rendering
     updateMessage(); //Update game status message
 }
@@ -120,6 +140,7 @@ function updateMessage() {
     if (!gameActive) {
         // Game over conditions
         if (isCheckmate(currentPlayer)) {
+            celebrateVictory();
             messageEl.textContent = `${currentPlayer === PLAYERS.WHITE ? 'Black' : 'White'} wins by checkmate! Game Over.`;
         } else if (isStalemate(currentPlayer)) {
             messageEl.textContent = "Stalemate! Game Over.";
@@ -143,15 +164,29 @@ function updateMessage() {
   
 //Handle drag start
 function handleDragStart(e) {
-    const position = e.target.parentElement.dataset.position;
-    const [row, col] = position.split('-').map(Number);
-    const piece = board[row][col];
-    if (piece === PIECES.EMPTY || piece[1] !== currentPlayer) {
-        e.preventDefault(); // Cancel drag if square is empty or not the player's turn
+    let targetElement = e.target;
+
+    // Check if the event target is part of an SVG and find the parent element with the dataset
+    while (targetElement && !targetElement.dataset.position) {
+        targetElement = targetElement.closest('.square');
+    }
+
+    if (!targetElement) {
+        console.error('Unable to find the square for the dragged piece.');
+        e.preventDefault();
         return;
     }
-    e.dataTransfer.setData('text/plain', position); // Store the position for the drop
-    selectPiece(row, col); // Highlight and prepare for moving
+
+    const [row, col] = targetElement.dataset.position.split('-').map(Number);
+    const piece = board[row][col];
+    if (piece === PIECES.EMPTY || piece[1] !== currentPlayer) {
+        e.preventDefault(); // Prevent drag if it's not the correct player's turn or the square is empty
+        return;
+    }
+
+    // If the piece is valid, store its position for the drop event
+    e.dataTransfer.setData('text/plain', targetElement.dataset.position);
+    selectPiece(row, col); // Optional: Highlight the piece or show possible moves
 }
 
 
@@ -163,21 +198,27 @@ function handleDragOver(e) {
 //Handle drop to move piece
 function handleDrop(e) {
     e.preventDefault();
-    const originalPosition = e.dataTransfer.getData('text/plain');
-    const [startRow, startCol] = originalPosition.split('-').map(Number);
-    const targetSquare = e.target.closest('.square');
-    const [endRow, endCol] = targetSquare.dataset.position.split('-').map(Number);
 
-    // Validate move
-    if (board[startRow][startCol] === PIECES.EMPTY) {
-        console.error("Attempting to move an empty square");
+    const originalPosition = e.dataTransfer.getData('text/plain');
+    if (!originalPosition) return; // Exit if no position data is found
+
+    const [startRow, startCol] = originalPosition.split('-').map(Number);
+    let targetSquare = e.target;
+
+    // Ensure we have the drop target as the square, not an SVG element
+    while (targetSquare && !targetSquare.dataset.position) {
+        targetSquare = targetSquare.closest('.square');
+    }
+
+    if (!targetSquare) {
+        console.error('Drop target is not a valid square.');
         return;
     }
-    
-    // Attempt the move
-    makeMove({row: startRow, col: startCol, piece: board[startRow][startCol]}, endRow, endCol);
 
-    // Additional logic (such as switch players) should be handled within makeMove
+    const [endRow, endCol] = targetSquare.dataset.position.split('-').map(Number);
+
+    // Attempt to move the piece
+    makeMove({ row: startRow, col: startCol, piece: board[startRow][startCol] }, endRow, endCol);
 }
 
 
@@ -561,3 +602,41 @@ function hasLegalMoves(row, col, board) {
     // If no legal moves found for the piece, return false
     return false;
 }
+
+function celebrateVictory() {
+    const confettiContainer = document.createElement('div');
+    confettiContainer.classList.add('confetti');
+    document.body.appendChild(confettiContainer);
+  
+    for (let i = 0; i < 100; i++) {
+      createConfettiPiece(confettiContainer);
+    }
+  
+    // Remove confetti after 5 seconds
+    setTimeout(() => {
+      confettiContainer.remove();
+    }, 5000);
+  }
+  
+  function createConfettiPiece(container) {
+    const confetti = document.createElement('div');
+    confetti.classList.add('confetti-piece');
+    container.appendChild(confetti);
+  
+    // Random position within the container
+    const xPos = Math.floor(Math.random() * window.innerWidth);
+    const yPos = Math.floor(Math.random() * window.innerHeight);
+    confetti.style.left = `${xPos}px`;
+    confetti.style.top = `${yPos}px`;
+  
+    // Animation
+    confetti.animate([
+      { transform: 'scale(0)', opacity: 0.7 },
+      { transform: 'scale(1)', opacity: 0.7, offset: 0.2 },
+      { transform: 'scale(0)', opacity: 0, offset: 1 }
+    ], {
+      duration: 3000,
+      easing: 'ease-out'
+    });
+  }
+  

@@ -3,15 +3,20 @@ body {
     justify-content: center;
     align-items: center;
     height: 100vh;
-    background-color: #f5f5f5;
-    font-family: 'Arial', sans-serif;
     margin: 0;
+    background-image: url('https://t4.ftcdn.net/jpg/03/19/51/83/360_F_319518370_PaSs6tXP9Plb9n6QDIlc3HcvBU6zOVOe.jpg'); /* Replace with your image path */
+    background-size: cover; /* Cover the entire page */
+    font-family: 'Arial', sans-serif;
 }
 
 main {
     display: flex;
     flex-direction: column;
     align-items: center;
+    background-color: rgba(255, 255, 255, 0.8); /* Optional: Adds a slight white overlay for better readability */
+    padding: 20px;
+    border-radius: 10px; /* Optional: Rounds the corners of the main content area */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Optional: Adds a subtle shadow for a lifted effect */
 }
 
 #chessboard {
@@ -19,6 +24,7 @@ main {
     grid-template-columns: repeat(8, 60px);
     grid-template-rows: repeat(8, 60px);
     border: 3px solid #333;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5); /* Adds shadow to the chessboard for depth */
 }
 
 #chessboard div.square {
@@ -68,3 +74,61 @@ main {
     background-color: red;
   }
   
+  .square {
+    width: 60px; /* or any size you've defined */
+    height: 60px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.piece svg {
+    width: 40px; /* Adjusted to a smaller size */
+    height: 40px; /* Adjusted to a smaller size */
+    fill: currentColor;
+    filter: drop-shadow(3px 3px 3px rgba(0, 0, 0, 0.7)) grayscale(0.1);
+    transition: transform 0.2s ease; /* Smooth transition for interaction */
+}
+
+.piece:hover svg {
+    transform: translateY(-3px); /* Slightly raise the piece on hover */
+}
+
+.piece.W {
+    color: #fff; /* White pieces color */
+}
+
+.piece.B {
+    color: #000; /* Black pieces color */
+}
+
+
+/* Example to adjust specific SVG paths if needed */
+.piece.B path {
+    fill: #000; /* Darker fill for black pieces */
+}
+
+.piece.W path {
+    fill: #FFF; /* Lighter fill for white pieces */
+}
+
+.confetti {
+    position: fixed;
+    z-index: 9999;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+  
+  .confetti-piece {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background-color: #ff0;
+    opacity: 0.7;
+    border-radius: 50%;
+    /* Initial invisible state */
+    transform: scale(0);
+  }
