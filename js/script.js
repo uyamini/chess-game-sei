@@ -29,6 +29,10 @@ chessboardEl.addEventListener('click', handleSquareClick);
 
 /*----- event listeners -----*/
 resetBtn.addEventListener('click', init);
+document.getElementById('reset').addEventListener('click', init);
+chessboardEl.addEventListener('dragstart', handleDragStart, false);
+chessboardEl.addEventListener('dragover', handleDragOver, false);
+chessboardEl.addEventListener('drop', handleDrop, false);
 
 /*----- functions -----*/
 function init() {
@@ -76,18 +80,43 @@ function init() {
   }
   
   function render() {
-    chessboardEl.innerHTML = '';
+    chessboardEl.innerHTML = ''; //Clear the board for a fresh render
     for (let row = 0; row < BOARD_SIZE; row++) {
-      for (let col = 0; col < BOARD_SIZE; col++) {
-        const square = document.createElement('div');
-        square.className = 'square ' + ((row + col) % 2 ? 'dark' : 'light');
-        square.textContent = board[row][col][0]; //Temporarily displays the first letter of the piece
-        square.dataset.position = `${row}-${col}`;
-        chessboardEl.appendChild(square);
-      }
+        for (let col = 0; col < BOARD_SIZE; col++) {
+            //Create each square
+            const square = document.createElement('div');
+            square.className = 'square ' + ((row + col) % 2 ? 'dark' : 'light'); //Alternating colors
+            square.dataset.position = `${row}-${col}`;
+            square.setAttribute('draggable', false); //Default to not draggable
+            
+            const piece = board[row][col];
+            if (piece !== PIECES.EMPTY) {
+                //Create a span element to hold the piece character or image
+                const pieceElement = document.createElement('span');
+                pieceElement.className = `chess-piece ${piece}`;
+                pieceElement.textContent = piece[0]; //Placeholder for the piece character
+                pieceElement.dataset.piece = piece; //Custom data attribute to identify the piece
+                
+                //Make pieces draggable
+                if (piece[1] === currentPlayer) {
+                    pieceElement.setAttribute('draggable', true);
+                    pieceElement.addEventListener('dragstart', handleDragStart);
+                }
+
+                square.appendChild(pieceElement);
+            }
+            
+            //Drop event listener to allow moving pieces
+            square.addEventListener('dragover', handleDragOver);
+            square.addEventListener('drop', handleDrop);
+
+            chessboardEl.appendChild(square);
+        }
     }
-    updateMessage();
-  }
+    highlightPossibleMoves(possibleMoves); //Re-highlight possible moves after rendering
+    updateMessage(); //Update game status message
+}
+
 
   function updateMessage() {
     const playerColor = currentPlayer === PLAYERS.WHITE ? "White" : "Black";
@@ -98,6 +127,26 @@ function init() {
   }
   
   init();
+  
+//Handle drag start
+function handleDragStart(e) {
+    const piece = e.target.dataset.piece;
+    const [row, col] = e.target.parentElement.dataset.position.split('-').map(Number);
+    selectPiece(row, col);
+}
+
+//Allow dropping by preventing the default handling of the event
+function handleDragOver(e) {
+    e.preventDefault();
+}
+
+//Handle drop to move piece
+function handleDrop(e) {
+    e.preventDefault();
+    const [startRow, startCol] = e.dataTransfer.getData('text/plain').split(',');
+    const [endRow, endCol] = e.target.dataset.position.split('-').map(Number);
+    makeMove({ row: parseInt(startRow, 10), col: parseInt(startCol, 10), piece: board[startRow][startCol] }, endRow, endCol);
+}
 
   function handleSquareClick(evt) {
     //Only respond to clicks on squares
@@ -140,18 +189,41 @@ function init() {
   }
   
   function makeMove(selectedPiece, targetRow, targetCol) {
-    //Move the piece if the target square is a possible move
+    //Ensure the move is within the list of calculated possible moves
     if (possibleMoves.some(pos => pos.row === targetRow && pos.col === targetCol)) {
-      //TO DO: implement the move logic and state updates here
-      console.log(`Moved ${selectedPiece.piece} to ${targetRow}-${targetCol}`);
-      board[targetRow][targetCol] = selectedPiece.piece; //Place piece on the target square
-      board[selectedPiece.row][selectedPiece.col] = PIECES.EMPTY; //Clear the original square
-      selectedPiece = null; //Deselect the piece
-      possibleMoves = []; //Clear possible moves
-      currentPlayer = currentPlayer === PLAYERS.WHITE ? PLAYERS.BLACK : PLAYERS.WHITE; // Switch turns
-      render(); //Re-render the board to show the updated state
+      //Execute the move
+      board[targetRow][targetCol] = selectedPiece.piece; // Move the piece to the new square
+      board[selectedPiece.row][selectedPiece.col] = PIECES.EMPTY; // Clear the original square
+      
+      //Handle special moves here (e.g., pawn promotion, en passant, castling)
+  
+      //Pawn promotion example (simplified, usually player chooses the piece)
+      if (selectedPiece.piece[0] === PIECES.PAWN && (targetRow === 0 || targetRow === BOARD_SIZE - 1)) {
+        board[targetRow][targetCol] = PIECES.QUEEN + selectedPiece.piece[1]; // Promote to Queen
+      }
+  
+      //Clear the selected piece and possible moves
+      selectedPiece = null;
+      possibleMoves = [];
+  
+      //Switch the current player
+      currentPlayer = currentPlayer === PLAYERS.WHITE ? PLAYERS.BLACK : PLAYERS.WHITE;
+      
+      //Re-render the board to reflect the new state
+      renderBoard();
+      
+      //Additional checks after move (check, checkmate, stalemate)
+      if (isCheck(currentPlayer, board)) {
+        console.log(currentPlayer + " is in check");
+        // Extend this with check for checkmate or stalemate if needed
+        if (isCheckmate(currentPlayer, board)) {
+          console.log(currentPlayer + " is in checkmate");
+          //Handle endgame scenario
+        }
+      }
     }
   }
+  
   
   function calculatePossibleMoves(selectedPiece, board) {
     let moves = [];
